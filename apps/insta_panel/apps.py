@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
 
-class InstaPanelConfig(AppConfig):
-    name = 'apps.insta_panel'
+class InstaAppConfig(AppConfig):
+    name = 'insta_app'
