@@ -15,12 +15,13 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 from insta_panel import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('post/', include("apps.post.urls"))
 ]
 
 if settings.DEBUG:
