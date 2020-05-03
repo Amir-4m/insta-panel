@@ -9,6 +9,7 @@ import time
 import random
 from uuid import uuid4
 
+from apps.insta_panel.api.api_photo import upload_photo
 from . import config
 
 
@@ -85,7 +86,7 @@ def get_video_info(filename):
     return res
 
 
-def upload_video(self, video, caption=None, upload_id=None, thumbnail=None, options={}):
+def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, options={}):
     """Upload video to Instagram
 
     @param video      Path to video file (String)
@@ -113,6 +114,7 @@ def upload_video(self, video, caption=None, upload_id=None, thumbnail=None, opti
     upload_name = "{upload_id}_0_{rand}".format(
         upload_id=upload_id, rand=random.randint(1000000000, 9999999999)
     )
+
     rupload_params = {
         "retry_context": '{"num_step_auto_retry":0,"num_reupload":0,"num_step_manual_retry":0}',
         "media_type": "2",
@@ -121,7 +123,12 @@ def upload_video(self, video, caption=None, upload_id=None, thumbnail=None, opti
         "upload_media_duration_ms": str(int(duration * 1000)),
         "upload_media_width": str(width),
         "upload_media_height": str(height),
+
     }
+
+    if is_sidecar:
+        rupload_params["is_sidecar"] = '1'
+
     self.session.headers.update(
         {
             "Accept-Encoding": "gzip",
@@ -130,13 +137,15 @@ def upload_video(self, video, caption=None, upload_id=None, thumbnail=None, opti
             "X-Entity-Type": "video/mp4",
         }
     )
-    response = self.session.get(
-        "https://{domain}/rupload_igvideo/{name}".format(
-            domain=config.API_DOMAIN, name=upload_name
-        )
-    )
-    if response.status_code != 200:
-        return False
+
+    # response = self.session.get(
+    #     "https://{domain}/rupload_igvideo/{name}".format(
+    #         domain=config.API_DOMAIN, name=upload_name
+    #     ),
+    # )
+    # if response.status_code != 200:
+    #     return False
+
     video_data = open(video, "rb").read()
     video_len = str(len(video_data))
     self.session.headers.update(
@@ -156,38 +165,21 @@ def upload_video(self, video, caption=None, upload_id=None, thumbnail=None, opti
     )
     if response.status_code != 200:
         return False
-    # CONFIGURE
-    configure_timeout = options.get("configure_timeout")
-    for attempt in range(4):
-        if configure_timeout:
-            time.sleep(configure_timeout)
-        if self.configure_video(
-            upload_id,
-            video,
-            thumbnail,
-            width,
-            height,
-            duration,
-            caption,
-            options=options,
-        ):
-            media = self.last_json.get("media")
-            self.expose()
-            if options.get("rename"):
-                os.rename(video, "{fname}.REMOVE_ME".format(fname=video))
-            return media
-    return False
+
+    options = {"rename": options.get("rename_thumbnail", True)}
+    upload_photo(self,
+                 photo=thumbnail,
+                 upload_id=upload_id,
+                 options=options,
+                 )
+
+    return upload_id, width, height, duration
 
 
-def configure_video(
-    self, upload_id, video, thumbnail, width, height, duration, caption="", options={}
-):
+def configure_video(self, upload_id, width, height, duration, caption=""):
     """Post Configure Video (send caption, thumbnail and more to Instagram)
 
     @param upload_id  Unique upload_id (String). Received from "upload_video"
-    @param video      Path to video file (String)
-    @param thumbnail  Path to thumbnail for video (String). When None,
-                      then thumbnail is generate automatically
     @param width      Width in px (Integer)
     @param height     Height in px (Integer)
     @param duration   Duration in seconds (Integer)
@@ -197,14 +189,7 @@ def configure_video(
                       Designed to reduce the number of function arguments!
                       This is the simplest request object.
     """
-    options = {"rename": options.get("rename_thumbnail", True)}
-    self.upload_photo(
-        photo=thumbnail,
-        caption=caption,
-        upload_id=upload_id,
-        from_video=True,
-        options=options,
-    )
+
     data = self.json_data(
         {
             "upload_id": upload_id,
@@ -217,7 +202,12 @@ def configure_video(
             "timezone_offset": "10800",
             "width": width,
             "height": height,
-            "clips": [{"length": duration, "source_type": "4"}],
+            "clips": [
+                {
+                    "length": duration,
+                    "source_type": "4"
+                }
+            ],
             "extra": {"source_width": width, "source_height": height},
             "device": self.device_settings,
             "caption": caption,
@@ -285,8 +275,7 @@ def resize_video(fname, thumbnail=None):
         if w > 1081:
             print("Resizing video")
             vid = vid.resize(width=1080)
-    (w, h) = vid.size
-    return fname, thumbnail, w, h, vid.duration
+            (w, h) = vid.size
     if vid.duration > d_lim:
         print("Cutting video to {lim} sec from start".format(lim=d_lim))
         vid = vid.subclip(0, d_lim)

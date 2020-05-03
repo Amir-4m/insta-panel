@@ -14,10 +14,8 @@ import pytz
 import requests
 import requests.utils
 import six.moves.urllib as urllib
-from instabot.api.api_album import upload_album
 from requests_toolbelt import MultipartEncoder
 from tqdm import tqdm
-
 
 from . import config, devices
 from .api_login import (
@@ -41,20 +39,18 @@ from .api_login import (
 from .api_photo import configure_photo, download_photo, upload_photo
 from .api_story import configure_story, download_story, upload_story_photo
 from .api_video import configure_video, download_video, upload_video
+from .api_album import configure_album, upload_album
 from .prepare import delete_credentials, get_credentials
-
 
 try:
     from json.decoder import JSONDecodeError
 except ImportError:
     JSONDecodeError = ValueError
 
-
 version_info = sys.version_info[0:3]
 is_py2 = version_info[0] == 2
 is_py3 = version_info[0] == 3
 is_py37 = version_info[:2] == (3, 7)
-
 
 version = "0.117.0"
 current_path = os.path.abspath(os.getcwd())
@@ -62,13 +58,13 @@ current_path = os.path.abspath(os.getcwd())
 
 class API(object):
     def __init__(
-        self,
-        device=None,
-        base_path=current_path + "/config/",
-        save_logfile=True,
-        log_filename=None,
-        loglevel_file=logging.DEBUG,
-        loglevel_stream=logging.INFO,
+            self,
+            device=None,
+            base_path=current_path + "/config/",
+            save_logfile=True,
+            log_filename=None,
+            loglevel_file=logging.DEBUG,
+            loglevel_stream=logging.INFO,
     ):
         # Setup device and user_agent
         self.device = device or devices.DEFAULT_DEVICE
@@ -203,18 +199,18 @@ class API(object):
         return save_uuid_and_cookie(self)
 
     def login(
-        self,
-        username=None,
-        password=None,
-        force=False,
-        proxy=None,
-        use_cookie=True,
-        use_uuid=True,
-        cookie_fname=None,
-        ask_for_code=False,
-        set_device=True,
-        generate_all_uuids=True,
-        is_threaded=False,
+            self,
+            username=None,
+            password=None,
+            force=False,
+            proxy=None,
+            use_cookie=True,
+            use_uuid=True,
+            cookie_fname=None,
+            ask_for_code=False,
+            set_device=True,
+            generate_all_uuids=True,
+            is_threaded=False,
     ):
         if password is None:
             username, password = get_credentials(username=username)
@@ -238,8 +234,8 @@ class API(object):
         if use_cookie is True:
             # try:
             if (
-                self.load_uuid_and_cookie(load_cookie=use_cookie, load_uuid=use_uuid)
-                is True
+                    self.load_uuid_and_cookie(load_cookie=use_cookie, load_uuid=use_uuid)
+                    is True
             ):
                 # Check if the token loaded is valid.
                 if self.login_flow(False) is True:
@@ -254,10 +250,10 @@ class API(object):
             self.session = requests.Session()
             if use_uuid is True:
                 if (
-                    self.load_uuid_and_cookie(
-                        load_cookie=use_cookie, load_uuid=use_uuid
-                    )
-                    is False
+                        self.load_uuid_and_cookie(
+                            load_cookie=use_cookie, load_uuid=use_uuid
+                        )
+                        is False
                 ):
                     if set_device is True:
                         self.set_device()
@@ -287,7 +283,7 @@ class API(object):
                 return True
 
             elif (
-                self.last_json.get("error_type", "") == "checkpoint_challenge_required"
+                    self.last_json.get("error_type", "") == "checkpoint_challenge_required"
             ):
                 # self.logger.info("Checkpoint challenge required...")
                 if ask_for_code is True:
@@ -417,9 +413,9 @@ class API(object):
             return False
 
         worked = (
-            ("logged_in_user" in self.last_json)
-            and (self.last_json.get("action", "") == "close")
-            and (self.last_json.get("status", "") == "ok")
+                ("logged_in_user" in self.last_json)
+                and (self.last_json.get("action", "") == "close")
+                and (self.last_json.get("status", "") == "ok")
         )
 
         if worked:
@@ -469,14 +465,14 @@ class API(object):
             self.session.proxies["https"] = scheme + self.proxy
 
     def send_request(
-        self,
-        endpoint,
-        post=None,
-        login=False,
-        with_signature=True,
-        headers=None,
-        extra_sig=None,
-        timeout_minutes=None,
+            self,
+            endpoint,
+            post=None,
+            login=False,
+            with_signature=True,
+            headers=None,
+            extra_sig=None,
+            timeout_minutes=None,
     ):
         self.set_proxy()  # Only happens if `self.proxy`
         self.session.headers.update(config.REQUEST_HEADERS)
@@ -533,7 +529,7 @@ class API(object):
             try:
                 response_data = json.loads(response.text)
                 if response_data.get(
-                    "message"
+                        "message"
                 ) is not None and "feedback_required" in str(
                     response_data.get("message").encode("utf-8")
                 ):
@@ -659,8 +655,8 @@ class API(object):
             "version": 1,
             "vc_policy": "default",
             "surfaces_to_triggers": '{"5734":["instagram_feed_prompt"],'
-            + '"4715":["instagram_feed_header"],'
-            + '"5858":["instagram_feed_tool_tip"]}',  # noqa
+                                    + '"4715":["instagram_feed_header"],'
+                                    + '"5858":["instagram_feed_tool_tip"]}',  # noqa
             "surfaces_to_queries": (
                 '{"5734":"viewer() {eligible_promotions.trigger_context_v2(<tr'
                 "igger_context_v2>).ig_parameters(<ig_parameters>).trigger_nam"
@@ -798,13 +794,12 @@ class API(object):
 
     # ====== PHOTO METHODS ====== #
     def upload_photo(
-        self,
-        photo,
-        caption=None,
-        upload_id=None,
-        from_video=False,
-        force_resize=False,
-        options={},
+            self,
+            photo,
+            upload_id=None,
+            is_sidecar=False,
+            force_resize=False,
+            options={},
     ):
         """Upload photo to Instagram
 
@@ -824,7 +819,7 @@ class API(object):
         @return Boolean
         """
         return upload_photo(
-            self, photo, caption, upload_id, from_video, force_resize, options
+            self, photo, upload_id, force_resize, is_sidecar, options
         )
 
     def download_photo(self, media_id, filename, media=False, folder="photos"):
@@ -845,7 +840,7 @@ class API(object):
 
     # ====== VIDEO METHODS ====== #
     def upload_video(
-        self, video, caption=None, upload_id=None, thumbnail=None, options={}
+            self, video, upload_id=None, thumbnail=None, is_sidecar=None, options={}
     ):
         """Upload video to Instagram
 
@@ -863,21 +858,18 @@ class API(object):
         @return           Object with state of uploading to
                           Instagram (or False)
         """
-        return upload_video(self, video, caption, upload_id, thumbnail, options)
+        return upload_video(self, video, upload_id, thumbnail, is_sidecar, options)
 
     def download_video(self, media_id, filename, media=False, folder="video"):
         return download_video(self, media_id, filename, media, folder)
 
     def configure_video(
-        self,
-        upload_id,
-        video,
-        thumbnail,
-        width,
-        height,
-        duration,
-        caption="",
-        options={},
+            self,
+            upload_id,
+            width,
+            height,
+            duration,
+            caption="",
     ):
         """Post Configure Video
         (send caption, thumbnail andmore else to Instagram)
@@ -897,13 +889,15 @@ class API(object):
                           This is the simplest request object.
         """
         return configure_video(
-            self, upload_id, video, thumbnail, width, height, duration, caption, options
+            self, upload_id, width, height, duration, caption
         )
 
     # ====== VIDEO METHODS ====== #
     def upload_album(self, media, caption=None):
         return upload_album(self, media, caption)
 
+    def configure_album(self, media, albumInternalMetadata, captionText='', location=None):
+        return configure_album(self, media, albumInternalMetadata, captionText, location)
 
     # ====== MEDIA METHODS ====== #
     def edit_media(self, media_id, captionText=""):
@@ -1022,17 +1016,17 @@ class API(object):
     # "is_carousel_bumped_post":"false", "container_module":"feed_timeline",
     # "feed_position":"0" # noqa
     def like(
-        self,
-        media_id,
-        double_tap=None,
-        container_module="feed_short_url",
-        feed_position=0,
-        username=None,
-        user_id=None,
-        hashtag_name=None,
-        hashtag_id=None,
-        entity_page_name=None,
-        entity_page_id=None,
+            self,
+            media_id,
+            double_tap=None,
+            container_module="feed_short_url",
+            feed_position=0,
+            username=None,
+            user_id=None,
+            hashtag_name=None,
+            hashtag_id=None,
+            entity_page_name=None,
+            entity_page_id=None,
     ):
 
         data = self.action_data(
@@ -1338,11 +1332,11 @@ class API(object):
     @staticmethod
     def generate_signature(data):
         body = (
-            hmac.new(
-                config.IG_SIG_KEY.encode("utf-8"), data.encode("utf-8"), hashlib.sha256
-            ).hexdigest()
-            + "."
-            + urllib.parse.quote(data)
+                hmac.new(
+                    config.IG_SIG_KEY.encode("utf-8"), data.encode("utf-8"), hashlib.sha256
+                ).hexdigest()
+                + "."
+                + urllib.parse.quote(data)
         )
         signature = "signed_body={body}&ig_sig_key_version={sig_key}"
         return signature.format(sig_key=config.SIG_KEY_VERSION, body=body)
@@ -1369,16 +1363,16 @@ class API(object):
             return generated_uuid.replace("-", "")
 
     def get_total_followers_or_followings(  # noqa: C901
-        self,
-        user_id,
-        amount=None,
-        which="followers",
-        filter_private=False,
-        filter_business=False,
-        filter_verified=False,
-        usernames=False,
-        to_file=None,
-        overwrite=False,
+            self,
+            user_id,
+            amount=None,
+            which="followers",
+            filter_private=False,
+            filter_business=False,
+            filter_verified=False,
+            usernames=False,
+            to_file=None,
+            overwrite=False,
     ):
         from io import StringIO
 
@@ -1615,7 +1609,7 @@ class API(object):
         return self.send_request(url)
 
     def get_reels_tray_feed(
-        self, reason="pull_to_refresh"
+            self, reason="pull_to_refresh"
     ):  # reason can be = cold_start, pull_to_refresh
         data = {
             "supported_capabilities_new": config.SUPPORTED_CAPABILITIES,
@@ -1686,7 +1680,7 @@ class API(object):
         story_seen = {}
         now = int(time.time())
         for i, story in enumerate(
-            sorted(reels, key=lambda m: m["taken_at"], reverse=True)
+                sorted(reels, key=lambda m: m["taken_at"], reverse=True)
         ):
             story_seen_at = now - min(
                 i + 1 + random.randint(0, 2), max(0, now - story["taken_at"])

@@ -9,7 +9,6 @@ import time
 import random
 from uuid import uuid4
 
-import requests
 from django.core.exceptions import ValidationError
 
 from . import config
@@ -103,10 +102,8 @@ def configure_photo(self, upload_id, photo, caption=""):
 def upload_photo(
         self,
         photo,
-        caption=None,
         upload_id=None,
         is_sidecar=None,
-        from_video=False,
         force_resize=False,
         options={},
 ):
@@ -133,7 +130,7 @@ def upload_photo(
         upload_id = str(int(time.time() * 1000))
 
     if not (photo and os.path.exists(photo)):
-        return False
+        raise Exception(f"{photo} not exist")
 
     if not compatible_aspect_ratio(get_image_size(photo)):
         self.logger.error("Photo does not have a compatible photo aspect ratio.")
@@ -165,7 +162,6 @@ def upload_photo(
     photo_len = str(len(photo_data))
     self.session.headers.update(
         {
-            "Accept-Encoding": "gzip",
             "X-Instagram-Rupload-Params": json.dumps(rupload_params),
             "X_FB_PHOTO_WATERFALL_ID": waterfall_id,
             "X-Entity-Type": "image/jpeg",
@@ -192,18 +188,7 @@ def upload_photo(
             "Photo Upload failed with the following response: {}".format(response)
         )
         return False
-    if from_video:
-        # Not configure when from_video is True
-        return True
-    # CONFIGURE
-    configure_timeout = options.get("configure_timeout")
-    for attempt in range(4):
-        if configure_timeout:
-            time.sleep(configure_timeout)
-        if self.configure_photo(upload_id, photo, caption):
-            self.expose()
-            return True
-    return False
+    return True
 
 
 def get_image_size(fname):

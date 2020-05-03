@@ -1,9 +1,7 @@
-import json
 import calendar
+import json
 import time
 from datetime import datetime
-
-from .api_photo import upload_photo
 
 
 def upload_album(self, media, caption=None, upload_id=None, options={}):
@@ -48,18 +46,10 @@ def upload_album(self, media, caption=None, upload_id=None, options={}):
         itemInternalMetadata = item['internalMetadata']
         item_upload_id = str(int(time.time() * 1000))
         if item.get('type', '') == 'photo':
-            upload_photo(self, photo=item['file'], caption=caption, is_sidecar=True, upload_id=item_upload_id,
-                         from_video=True)
-            # $itemInternalMetadata->setPhotoUploadResponse($this->ig->internal->uploadPhotoData(Constants::FEED_TIMELINE_ALBUM, $itemInternalMetadata));
+            self.upload_photo(photo=item['file'], upload_id=item_upload_id, is_sidecar=True)
 
         elif item.get('type', '') == 'video':
-            # Attempt to upload the video data.
-            self.uploadVideo(item['file'], item['thumbnail'], caption=caption, is_sidecar=True,
-                             upload_id=item_upload_id)
-            # $itemInternalMetadata = $this->ig->internal->uploadVideo(Constants::FEED_TIMELINE_ALBUM, $item['file'], $itemInternalMetadata);
-            # Attempt to upload the thumbnail, associated with our video's ID.
-            # $itemInternalMetadata->setPhotoUploadResponse($this->ig->internal->uploadPhotoData(Constants::FEED_TIMELINE_ALBUM, $itemInternalMetadata));
-            pass
+            self.upload_video(video=item['file'], upload_id=item_upload_id, is_sidecar=True)
         item['internalMetadata']['upload_id'] = item_upload_id
 
     album_internal_metadata = {}
@@ -69,14 +59,14 @@ def upload_album(self, media, caption=None, upload_id=None, options={}):
     for attempt in range(4):
         if configure_timeout:
             time.sleep(configure_timeout)
-        if configure_time_line_album(self, media, album_internal_metadata, captionText=caption):
+        if self.configure_album(media, album_internal_metadata, captionText=caption):
             media = self.last_json.get("media")
             self.expose()
             return media
     return False
 
 
-def configure_time_line_album(self, media, albumInternalMetadata, captionText='', location=None):
+def configure_album(self, media, albumInternalMetadata, captionText='', location=None):
     endpoint = 'media/configure_sidecar/'
     albumUploadId = str(calendar.timegm(datetime.utcnow().utctimetuple()))
 
