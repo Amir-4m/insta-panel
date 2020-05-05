@@ -20,7 +20,7 @@ from django.urls import path, include
 from insta_panel import settings
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin8ae377/', admin.site.urls),
     path('post/', include("apps.post.urls"))
 ]
 
