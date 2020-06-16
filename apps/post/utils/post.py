@@ -10,7 +10,7 @@ CONFIGURE_TIMEOUT = 15
 
 def login(page):
     try:
-        api.login(page.username, page.password)
+        api.login(page.username, page.password, ask_for_code=True)
     except:
         raise Exception("login error")
 

@@ -75,21 +75,20 @@ WSGI_APPLICATION = 'insta_panel.wsgi.application'
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config("DB_NAME"),
-        'USER': config("DB_USER", default=''),
-        'PASSWORD': config("DB_PASS", default=''),
-        'HOST': config("DB_HOST", default='localhost'),
-        'PORT': config("DB_PORT", default=''),
-    }
+        'ENGINE': config('DB_ENGINE'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASS'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
+    },
 }
-
 # Cache
 CACHES = {
     'default': {
-        'BACKEND': config("CACHE_BACKEND", default='django.core.cache.backends.locmem.LocMemCache'),
-        'LOCATION': config("CACHE_HOST", ''),
-        'KEY_PREFIX': 'INSTACP',
+        'BACKEND': config('CACHE_BACKEND', default='django.core.cache.backends.locmem.LocMemCache'),
+        'LOCATION': config('CACHE_HOST', default=''),
+        'KEY_PREFIX': 'INSTA_PANEL',
     },
 }
 

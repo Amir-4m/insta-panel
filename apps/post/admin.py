@@ -59,7 +59,7 @@ class PostAdmin(admin.ModelAdmin):
 
     def publish(self, request, post_id):
         try:
-            publish_post(post_id)
+            # publish_post(post_id)
             messages.success(request, 'The post has been published on instagram page(s).')
         except Exception as e:
             messages.error(request, e)

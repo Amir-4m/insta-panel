@@ -7,11 +7,11 @@ from apps.page.models import Page
 class Post(models.Model):
     creator = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     pages = models.ManyToManyField(Page)
-
     caption = models.TextField()
-
     created_time = models.DateTimeField(auto_now_add=True)
     updated_time = models.DateTimeField(auto_now=True)
+
+    publish_time = models.DateTimeField(null=True, blank=True, db_index=True)
 
     def __str__(self):
         return self.caption[:50]

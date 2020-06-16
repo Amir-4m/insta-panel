@@ -1,9 +1,9 @@
-from django.conf.global_settings import AUTH_USER_MODEL
+from django.conf import settings
 from django.db import models
 
 
 class Page(models.Model):
-    admins = models.ManyToManyField(AUTH_USER_MODEL)
+    admins = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='pages')
     name = models.CharField(max_length=100)
     owner = models.CharField(max_length=100, blank=True)
     image = models.ImageField(null=True, blank=True)

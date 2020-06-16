@@ -7,6 +7,7 @@ import struct
 import json
 import time
 import random
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from django.core.exceptions import ValidationError
@@ -144,13 +145,14 @@ def upload_photo(
         upload_id=upload_id, rand=random.randint(1000000000, 9999999999)
     )
     rupload_params = {
-        "retry_context": '{"num_step_auto_retry":0,"num_reupload":0,"num_step_manual_retry":0}',
-        "media_type": "1",
-        "xsharing_user_ids": "[]",
-        "upload_id": upload_id,
-        "image_compression": json.dumps(
-            {"lib_name": "moz", "lib_version": "3.1.m", "quality": "80"}
-        ),
+        'retry_context': {
+            'num_step_auto_retry': 0, 'num_reupload': 0, 'num_step_manual_retry': 0
+        },
+        'media_type': 1,
+        'upload_id': upload_id,
+        'xsharing_user_ids': [],
+        ' image_compression': {'lib_name': 'moz', 'lib_version': '3.1.m', 'quality': '80'},
+
     }
     if is_sidecar:
         rupload_params["is_sidecar"] = '1'
@@ -164,9 +166,10 @@ def upload_photo(
         {
             "X-Instagram-Rupload-Params": json.dumps(rupload_params),
             "X_FB_PHOTO_WATERFALL_ID": waterfall_id,
+            "Cookie2": "$Version=1",
             "X-Entity-Type": "image/jpeg",
             "Offset": "0",
-            "X-Entity-Name": upload_name,
+            "X-Entity-Name": "fb_uploader_" + upload_id,
             "X-Entity-Length": photo_len,
             "Content-Type": "application/octet-stream",
             "Content-Length": photo_len,
@@ -188,7 +191,7 @@ def upload_photo(
             "Photo Upload failed with the following response: {}".format(response)
         )
         return False
-    return True
+    return upload_id
 
 
 def get_image_size(fname):
