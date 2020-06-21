@@ -67,15 +67,19 @@ def publish_album(post):
             }
         )
 
-    api.upload_album(media, post.caption)
+    if api.upload_album(media, post.caption):
+        return True
+    return False
 
 
 def upload_story(story_id):
     story = Story.objects.get(id=story_id)
     image_path = story.storyimage_set.first().file.path
     for page in story.pages.all():
-        if login(page):
-            api.upload_story_photo(image_path)
+        login(page)
+        if api.upload_story_photo(image_path):
+            return True
+        return False
 
 
 def publish_post(post_id):

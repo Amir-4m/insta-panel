@@ -10,7 +10,6 @@ class Post(models.Model):
     caption = models.TextField()
     created_time = models.DateTimeField(auto_now_add=True)
     updated_time = models.DateTimeField(auto_now=True)
-
     publish_time = models.DateTimeField(null=True, blank=True, db_index=True)
 
     def __str__(self):
@@ -20,7 +19,7 @@ class Post(models.Model):
 class Story(models.Model):
     creator = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     pages = models.ManyToManyField(Page)
-
+    publish_time = models.DateTimeField(null=True, blank=True, db_index=True)
     created_time = models.DateTimeField(auto_now_add=True)
     updated_time = models.DateTimeField(auto_now=True)
 
