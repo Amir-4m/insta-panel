@@ -62,7 +62,7 @@ class PostAdmin(admin.ModelAdmin):
     def publish(self, request, post_id):
         try:
             post = Post.objects.get(id=post_id)
-            if not post.publish_time:
+            if post.publish_time is None:
                 publish_post(post_id)
                 messages.success(request, 'The post has been published on instagram page(s).')
                 Post.objects.filter(id=post_id).update(publish_time=timezone.now())

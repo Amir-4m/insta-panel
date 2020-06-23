@@ -2,6 +2,7 @@ import time
 
 from apps.insta_panel.api.api import API
 from apps.post.models import Post, Story
+from apps.page.services import PageServices
 
 api = API()
 
@@ -10,7 +11,8 @@ CONFIGURE_TIMEOUT = 15
 
 def login(page):
     try:
-        api.login(page.username, page.password, ask_for_code=True)
+        password = PageServices.get_password(page, page.password)
+        api.login(page.username, password, ask_for_code=True)
     except:
         raise Exception("login error")
 
