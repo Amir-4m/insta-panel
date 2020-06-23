@@ -4,7 +4,8 @@ from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils.html import format_html
 from apps.page.models import Page
-from apps.post.utils.post import publish_post, upload_story
+from .utils.post import publish_post, upload_story
+from .utils.post_admin import custom_change_delete_permission, custom_view_permission
 from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo
 
 
@@ -49,7 +50,7 @@ class PostAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def post_actions(self, obj):
-        if not obj.publish_time:
+        if obj.publish_time is None:
             return format_html(
                 '<a class="button" href="{}">Publish</a>',
                 reverse('admin:post-publish', args=[obj.pk])
@@ -77,34 +78,14 @@ class PostAdmin(admin.ModelAdmin):
             kwargs["queryset"] = Page.objects.filter(admins=request.user)
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
     def save_model(self, request, obj, form, change):
-        user_accessed_pages = request.user.pages.all().values_list('id', flat=True)
         pages = form.cleaned_data.get('pages')
         for page in pages:
-            if page.id not in user_accessed_pages:
+            if request.user not in page.admins.all():
                 messages.set_level(request, messages.ERROR)
                 return messages.error(request, f"you have no access to page {page.username}")
         obj.creator = request.user
         super().save_model(request, obj, form, change)
-
-    # def delete_model(self, request, obj):
-    #     user = request.user
-    #     pages = obj.pages.all().values_list('id', flat=True)
-    #     if user.is_superuser:
-    #         super(PostAdmin, self).delete_model(request, obj)
-    #     else:
-    #         for page in pages:
-    #             if page.id not in request.user.pages.all().values_list('id', flat=True):
-    #                 messages.set_level(request, messages.ERROR)
-    #                 return messages.error(request, 'you could not delete this post !')
-    #             else:
-    #                 super(PostAdmin, self).delete_model(request, obj)
 
     def get_queryset(self, request):
         qs = super(PostAdmin, self).get_queryset(request)
@@ -114,14 +95,15 @@ class PostAdmin(admin.ModelAdmin):
         return qs.filter(pages__admins=request.user)
 
     def has_view_permission(self, request, obj=None):
-        if request.user.is_superuser:
-            return True
-        else:
-            if obj is not None:
-                for page in obj.pages.all():
-                    if page.id not in request.user.pages.all().values_list('id', flat=True):
-                        return False
-            return True
+        return custom_view_permission(request.user, obj)
+
+    def has_change_permission(self, request, obj=None):
+        user = request.user
+        return custom_change_delete_permission(user, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        user = request.user
+        return custom_change_delete_permission(user, obj)
 
 
 class StoryImageInline(admin.TabularInline):
@@ -163,7 +145,7 @@ class StoryAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def post_actions(self, obj):
-        if not obj.publish_time:
+        if obj.publish_time is None:
             return format_html(
                 '<a class="button" href="{}">Publish</a>',
                 reverse('admin:story-publish', args=[obj.pk])
@@ -190,13 +172,11 @@ class StoryAdmin(admin.ModelAdmin):
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
-        user_accessed_pages = request.user.pages.all().values_list('id', flat=True)
         pages = form.cleaned_data.get('pages')
         for page in pages:
-            if page.id not in user_accessed_pages:
+            if request.user not in page.admins.all():
                 messages.set_level(request, messages.ERROR)
                 return messages.error(request, f"you have no access to page {page.username}")
-
         obj.creator = request.user
         super().save_model(request, obj, form, change)
 
@@ -208,20 +188,15 @@ class StoryAdmin(admin.ModelAdmin):
         return qs.filter(pages__admins=request.user)
 
     def has_view_permission(self, request, obj=None):
-        if request.user.is_superuser:
-            return True
-        else:
-            if obj is not None:
-                for page in obj.pages.all():
-                    if page.id not in request.user.pages.all().values_list('id', flat=True):
-                        return False
-            return True
+        return custom_view_permission(request.user, obj)
 
     def has_change_permission(self, request, obj=None):
-        return False
+        user = request.user
+        return custom_change_delete_permission(user, obj)
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        user = request.user
+        return custom_change_delete_permission(user, obj)
 
 
 admin.site.register(Post, PostAdmin)
