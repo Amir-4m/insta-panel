@@ -32,7 +32,7 @@ def publish_photo(post):
 
 def publish_video(post):
     video = post.postvideo_set.first().file.path
-    upload_id, width, height, duration = api.upload_video(video, post.caption)
+    upload_id, width, height, duration = api.upload_video(video)
     # CONFIGURE
     for attempt in range(4):
         if CONFIGURE_TIMEOUT:

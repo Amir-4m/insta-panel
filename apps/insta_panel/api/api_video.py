@@ -116,13 +116,15 @@ def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, o
     )
 
     rupload_params = {
-        "retry_context": '{"num_step_auto_retry":0,"num_reupload":0,"num_step_manual_retry":0}',
-        "media_type": "2",
+        'retry_context': {
+            'num_step_auto_retry': 0, 'num_reupload': 0, 'num_step_manual_retry': 0
+        },
+        "media_type": 2,
         "xsharing_user_ids": "[]",
         "upload_id": upload_id,
-        "upload_media_duration_ms": str(int(duration * 1000)),
-        "upload_media_width": str(width),
-        "upload_media_height": str(height),
+        "upload_media_duration_ms": int(duration * 1000),
+        "upload_media_width": width,
+        "upload_media_height": height,
 
     }
 
@@ -138,31 +140,35 @@ def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, o
         }
     )
 
-    # response = self.session.get(
-    #     "https://{domain}/rupload_igvideo/{name}".format(
-    #         domain=config.API_DOMAIN, name=upload_name
-    #     ),
-    # )
-    # if response.status_code != 200:
-    #     return False
+    response = self.session.get(
+        "https://{domain}/rupload_igvideo/{name}".format(
+            domain=config.API_DOMAIN, name=upload_name
+        ),
+    )
+    if response.status_code != 200:
+        return False
 
     video_data = open(video, "rb").read()
     video_len = str(len(video_data))
     self.session.headers.update(
         {
             "Offset": "0",
-            "X-Entity-Name": upload_name,
+            "X-Entity-Name": "fb_uploader_" + upload_id,
             "X-Entity-Length": video_len,
             "Content-Type": "application/octet-stream",
             "Content-Length": video_len,
         }
     )
-    response = self.session.post(
-        "https://{domain}/rupload_igvideo/{name}".format(
-            domain=config.API_DOMAIN, name=upload_name
-        ),
-        data=video_data,
-    )
+    try:
+        response = self.session.post(
+            "https://{domain}/rupload_igvideo/{name}".format(
+                domain=config.API_DOMAIN, name=upload_name
+            ),
+            data=video_data,
+        )
+    except Exception as e:
+        print(e)
+
     if response.status_code != 200:
         return False
 
@@ -189,7 +195,6 @@ def configure_video(self, upload_id, width, height, duration, caption=""):
                       Designed to reduce the number of function arguments!
                       This is the simplest request object.
     """
-
     data = self.json_data(
         {
             "upload_id": upload_id,
