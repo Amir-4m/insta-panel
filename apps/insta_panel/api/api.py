@@ -37,7 +37,7 @@ from .api_login import (
     creatives_ar_class,
 )
 from .api_photo import configure_photo, download_photo, upload_photo
-from .api_story import configure_story, download_story, upload_story_photo
+from .api_story import configure_story, download_story, upload_story_photo, upload_story_video, configure_story_video
 from .api_video import configure_video, download_video, upload_video
 from .api_album import configure_album, upload_album
 from .prepare import delete_credentials, get_credentials
@@ -834,6 +834,12 @@ class API(object):
 
     def upload_story_photo(self, photo, upload_id=None):
         return upload_story_photo(self, photo, upload_id)
+
+    def upload_story_video(self, video, upload_id=None):
+        return upload_story_video(self, video, upload_id)
+
+    def configure_story_video(self, upload_id, video):
+        return configure_story_video(self, upload_id, video)
 
     def configure_story(self, upload_id, photo):
         return configure_story(self, upload_id, photo)

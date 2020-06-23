@@ -76,10 +76,18 @@ def publish_album(post):
 
 def upload_story(story_id):
     story = Story.objects.get(id=story_id)
-    image_path = story.storyimage_set.first().file.path
+    if story.storyimage_set.count() == 1:
+        path = story.storyimage_set.first().file.path
+        upload = api.upload_story_photo
+    elif story.storyvideo_set.count() == 1:
+        path = story.storyvideo_set.first().file.path
+        upload = api.upload_story_video
+    else:
+        return False
+
     for page in story.pages.all():
         login(page)
-        if api.upload_story_photo(image_path):
+        if upload(path):
             return True
         return False
 
