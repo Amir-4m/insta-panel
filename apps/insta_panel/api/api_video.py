@@ -86,7 +86,7 @@ def get_video_info(filename):
     return res
 
 
-def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, options={}):
+def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, location=None, options={}):
     """Upload video to Instagram
 
     @param video      Path to video file (String)
@@ -108,6 +108,9 @@ def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, o
     )
     if upload_id is None:
         upload_id = str(int(time.time() * 1000))
+
+    if location:
+        self._validate_location(location)
     video, thumbnail, width, height, duration = resize_video(video, thumbnail)
     waterfall_id = str(uuid4())
     # upload_name example: '1576102477530_0_7823256191'
@@ -182,7 +185,7 @@ def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, o
     return upload_id, width, height, duration
 
 
-def configure_video(self, upload_id, width, height, duration, caption=""):
+def configure_video(self, upload_id, width, height, duration, caption="", location=None):
     """Post Configure Video (send caption, thumbnail and more to Instagram)
 
     @param upload_id  Unique upload_id (String). Received from "upload_video"
@@ -195,29 +198,40 @@ def configure_video(self, upload_id, width, height, duration, caption=""):
                       Designed to reduce the number of function arguments!
                       This is the simplest request object.
     """
-    data = self.json_data(
-        {
-            "upload_id": upload_id,
-            "source_type": 4,
-            "poster_frame_index": 0,
-            "length": duration,
-            "audio_muted": False,
-            "filter_type": 0,
-            "date_time_original": time.strftime("%Y:%m:%d %H:%M:%S", time.localtime()),
-            "timezone_offset": "10800",
-            "width": width,
-            "height": height,
-            "clips": [
-                {
-                    "length": duration,
-                    "source_type": "4"
-                }
-            ],
-            "extra": {"source_width": width, "source_height": height},
-            "device": self.device_settings,
-            "caption": caption,
-        }
-    )
+    data = {
+        "upload_id": upload_id,
+        "source_type": 4,
+        "poster_frame_index": 0,
+        "length": duration,
+        "audio_muted": False,
+        "filter_type": 0,
+        "date_time_original": time.strftime("%Y:%m:%d %H:%M:%S", time.localtime()),
+        "timezone_offset": "10800",
+        "width": width,
+        "height": height,
+        "clips": [
+            {
+                "length": duration,
+                "source_type": "4"
+            }
+        ],
+        "extra": {"source_width": width, "source_height": height},
+        "device": self.device_settings,
+        "caption": caption,
+    }
+
+    if location is not None:
+        media_loc = self._validate_location(location)
+        data['location'] = json.dumps(media_loc)
+        if 'lat' in location and 'lng' in location:
+            data['geotag_enabled'] = '1'
+            data['exif_latitude'] = '0.0'
+            data['exif_longitude'] = '0.0'
+            data['posting_latitude'] = str(location['lat'])
+            data['posting_longitude'] = str(location['lng'])
+            data['media_latitude'] = str(location['lat'])
+            data['media_latitude'] = str(location['lng'])
+    data = self.json_data(data)
     return self.send_request("media/configure/?video=1", data, with_signature=True)
 
 

@@ -36,8 +36,14 @@ def publish_photo(post):
 
 
 def publish_video(post):
+    location = post.location
+    location_data = None
+    if location is not None:
+        location_data = api.location_search(location.y, location.x).json().get('venues')[0]
+        location_data.update({"address": location_data.get('name')})
+
     video = post.postvideo_set.first().file.path
-    upload_id, width, height, duration = api.upload_video(video)
+    upload_id, width, height, duration = api.upload_video(video, location=location_data)
     # CONFIGURE
     for attempt in range(4):
         if CONFIGURE_TIMEOUT:
@@ -47,7 +53,9 @@ def publish_video(post):
                 width=width,
                 height=height,
                 duration=duration,
-                caption=post.caption):
+                caption=post.caption,
+                location=location_data
+        ):
             media = api.last_json.get("media")
             api.expose()
             return media

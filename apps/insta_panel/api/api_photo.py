@@ -96,7 +96,7 @@ def configure_photo(self, upload_id, photo, caption="", location=None):
         "extra": {"source_width": width, "source_height": height},
     }
 
-    if location:
+    if location is not None:
         media_loc = self._validate_location(location)
         data['location'] = json.dumps(media_loc)
         if 'lat' in location and 'lng' in location:

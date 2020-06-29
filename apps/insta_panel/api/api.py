@@ -933,7 +933,7 @@ class API(object):
 
     # ====== VIDEO METHODS ====== #
     def upload_video(
-            self, video, upload_id=None, thumbnail=None, is_sidecar=None, options={}
+            self, video, upload_id=None, thumbnail=None, is_sidecar=None, location=None, options={}
     ):
         """Upload video to Instagram
 
@@ -951,7 +951,7 @@ class API(object):
         @return           Object with state of uploading to
                           Instagram (or False)
         """
-        return upload_video(self, video, upload_id, thumbnail, is_sidecar, options)
+        return upload_video(self, video, upload_id, thumbnail, is_sidecar, location, options)
 
     def download_video(self, media_id, filename, media=False, folder="video"):
         return download_video(self, media_id, filename, media, folder)
@@ -963,6 +963,7 @@ class API(object):
             height,
             duration,
             caption="",
+            location=None
     ):
         """Post Configure Video
         (send caption, thumbnail andmore else to Instagram)
@@ -982,7 +983,7 @@ class API(object):
                           This is the simplest request object.
         """
         return configure_video(
-            self, upload_id, width, height, duration, caption
+            self, upload_id, width, height, duration, caption, location
         )
 
     # ====== VIDEO METHODS ====== #
