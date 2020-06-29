@@ -885,7 +885,6 @@ class API(object):
             upload_id=None,
             is_sidecar=False,
             force_resize=False,
-            location=None,
             options={},
     ):
         """Upload photo to Instagram
@@ -906,7 +905,7 @@ class API(object):
         @return Boolean
         """
         return upload_photo(
-            self, photo, upload_id, force_resize, is_sidecar, location, options
+            self, photo, upload_id, force_resize, is_sidecar, options
         )
 
     def download_photo(self, media_id, filename, media=False, folder="photos"):
@@ -933,7 +932,7 @@ class API(object):
 
     # ====== VIDEO METHODS ====== #
     def upload_video(
-            self, video, upload_id=None, thumbnail=None, is_sidecar=None, location=None, options={}
+            self, video, upload_id=None, thumbnail=None, is_sidecar=None, options={}
     ):
         """Upload video to Instagram
 
@@ -951,7 +950,7 @@ class API(object):
         @return           Object with state of uploading to
                           Instagram (or False)
         """
-        return upload_video(self, video, upload_id, thumbnail, is_sidecar, location, options)
+        return upload_video(self, video, upload_id, thumbnail, is_sidecar, options)
 
     def download_video(self, media_id, filename, media=False, folder="video"):
         return download_video(self, media_id, filename, media, folder)
@@ -987,8 +986,8 @@ class API(object):
         )
 
     # ====== VIDEO METHODS ====== #
-    def upload_album(self, media, caption=None):
-        return upload_album(self, media, caption)
+    def upload_album(self, media, caption=None, location=None):
+        return upload_album(self, media, caption, location=location)
 
     def configure_album(self, media, albumInternalMetadata, captionText='', location=None):
         return configure_album(self, media, albumInternalMetadata, captionText, location)

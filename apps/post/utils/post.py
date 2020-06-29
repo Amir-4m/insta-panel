@@ -24,7 +24,7 @@ def publish_photo(post):
     if location is not None:
         location_data = api.location_search(location.y, location.x).json().get('venues')[0]
         location_data.update({"address": location_data.get('name')})
-    upload_id = api.upload_photo(photo, location=location_data)
+    upload_id = api.upload_photo(photo)
     if upload_id:
         # CONFIGURE
         for attempt in range(4):
@@ -43,7 +43,7 @@ def publish_video(post):
         location_data.update({"address": location_data.get('name')})
 
     video = post.postvideo_set.first().file.path
-    upload_id, width, height, duration = api.upload_video(video, location=location_data)
+    upload_id, width, height, duration = api.upload_video(video)
     # CONFIGURE
     for attempt in range(4):
         if CONFIGURE_TIMEOUT:
@@ -63,6 +63,11 @@ def publish_video(post):
 
 
 def publish_album(post):
+    location = post.location
+    location_data = None
+    if location is not None:
+        location_data = api.location_search(location.y, location.x).json().get('venues')[0]
+        location_data.update({"address": location_data.get('name')})
     images = post.postimage_set.all()
     videos = post.postvideo_set.all()
     media = []
@@ -81,8 +86,7 @@ def publish_album(post):
                 'file': video.file.path,  # Path to the video file.
             }
         )
-
-    if api.upload_album(media, post.caption):
+    if api.upload_album(media, post.caption, location=location_data):
         return True
     return False
 

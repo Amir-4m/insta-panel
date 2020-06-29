@@ -117,7 +117,6 @@ def upload_photo(
         upload_id=None,
         is_sidecar=None,
         force_resize=False,
-        location=None,
         options={},
 ):
     """Upload photo to Instagram
@@ -138,6 +137,7 @@ def upload_photo(
     @return Boolean
     """
     options = dict({"configure_timeout": 15, "rename": True}, **(options or {}))
+    for_video = True if upload_id else False
 
     if upload_id is None:
         upload_id = str(int(time.time() * 1000))
@@ -156,8 +156,7 @@ def upload_photo(
     upload_name = "{upload_id}_0_{rand}".format(
         upload_id=upload_id, rand=random.randint(1000000000, 9999999999)
     )
-    if location:
-        self._validate_location(location)
+
     rupload_params = {
         'retry_context': {
             'num_step_auto_retry': 0, 'num_reupload': 0, 'num_step_manual_retry': 0
@@ -170,6 +169,8 @@ def upload_photo(
     }
     if is_sidecar:
         rupload_params["is_sidecar"] = '1'
+        if for_video:
+            rupload_params['media_type'] = 2
 
     try:
         photo_data = open(photo, "rb").read()

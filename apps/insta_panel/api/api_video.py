@@ -86,7 +86,7 @@ def get_video_info(filename):
     return res
 
 
-def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, location=None, options={}):
+def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, options={}):
     """Upload video to Instagram
 
     @param video      Path to video file (String)
@@ -109,8 +109,6 @@ def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, l
     if upload_id is None:
         upload_id = str(int(time.time() * 1000))
 
-    if location:
-        self._validate_location(location)
     video, thumbnail, width, height, duration = resize_video(video, thumbnail)
     waterfall_id = str(uuid4())
     # upload_name example: '1576102477530_0_7823256191'
@@ -180,8 +178,8 @@ def upload_video(self, video, upload_id=None, thumbnail=None, is_sidecar=None, l
                  photo=thumbnail,
                  upload_id=upload_id,
                  options=options,
+                 is_sidecar=is_sidecar
                  )
-
     return upload_id, width, height, duration
 
 
@@ -200,9 +198,10 @@ def configure_video(self, upload_id, width, height, duration, caption="", locati
     """
     data = {
         "upload_id": upload_id,
-        "source_type": 4,
+        "source_type": 3,
         "poster_frame_index": 0,
         "length": duration,
+        'video_result': 'deprecated',
         "audio_muted": False,
         "filter_type": 0,
         "date_time_original": time.strftime("%Y:%m:%d %H:%M:%S", time.localtime()),
