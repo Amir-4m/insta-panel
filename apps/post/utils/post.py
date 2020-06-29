@@ -19,13 +19,18 @@ def login(page):
 
 def publish_photo(post):
     photo = post.postimage_set.first().file.path
-    upload_id = api.upload_photo(photo)
+    location = post.location
+    location_data = None
+    if location is not None:
+        location_data = api.location_search(location.y, location.x).json().get('venues')[0]
+        location_data.update({"address": location_data.get('name')})
+    upload_id = api.upload_photo(photo, location=location_data)
     if upload_id:
         # CONFIGURE
         for attempt in range(4):
             if CONFIGURE_TIMEOUT:
                 time.sleep(CONFIGURE_TIMEOUT)
-            if api.configure_photo(upload_id, photo, post.caption):
+            if api.configure_photo(upload_id, photo, post.caption, location=location_data):
                 return True
     return False
 
@@ -94,7 +99,6 @@ def upload_story(story_id):
 
 def publish_post(post_id):
     post = Post.objects.get(id=post_id)
-
     if 1 < post.postimage_set.count() + post.postvideo_set.count() <= 10:
         upload = publish_album
     elif post.postimage_set.count() == 1:

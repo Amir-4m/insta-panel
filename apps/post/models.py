@@ -1,6 +1,6 @@
 from django.conf.global_settings import AUTH_USER_MODEL
+from django.contrib.gis.db.models import PointField, MultiPolygonField,GeometryField
 from django.db import models
-
 from apps.page.models import Page
 
 
@@ -8,6 +8,7 @@ class Post(models.Model):
     creator = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     pages = models.ManyToManyField(Page)
     caption = models.TextField()
+    location = PointField(null=True)
     created_time = models.DateTimeField(auto_now_add=True)
     updated_time = models.DateTimeField(auto_now=True)
     publish_time = models.DateTimeField(null=True, blank=True, db_index=True)

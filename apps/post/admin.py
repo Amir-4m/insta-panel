@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.contrib.gis.admin import OSMGeoAdmin
 from django.utils import timezone
 from django.shortcuts import redirect
 from django.urls import reverse, path
@@ -21,7 +22,7 @@ class VideoInline(admin.TabularInline):
     max_num = 10
 
 
-class PostAdmin(admin.ModelAdmin):
+class PostAdmin(OSMGeoAdmin):
     list_display = [
         'caption',
         'creator',
@@ -31,7 +32,6 @@ class PostAdmin(admin.ModelAdmin):
         'post_actions',
     ]
     exclude = ["creator"]
-
     inlines = [
         ImageInline,
         VideoInline,
