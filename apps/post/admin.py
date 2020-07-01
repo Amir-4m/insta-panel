@@ -5,9 +5,21 @@ from django.shortcuts import redirect
 from django.urls import reverse, path
 from django.utils.html import format_html
 from apps.page.models import Page
+from .forms import PostAdminForm
 from .utils.post import publish_post, upload_story
 from .utils.post_admin import custom_change_delete_permission, custom_view_permission
-from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo
+from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo, Location, InstagramAccount
+from ..insta_panel.api.api import API
+
+api = API()
+
+
+@admin.register(InstagramAccount)
+class InstagramAccountModelAdmin(admin.ModelAdmin):
+    list_display = ('id', 'username', 'is_enable')
+    search_fields = ('username',)
+    list_filter = ('is_enable',)
+    readonly_fields = ('failed_login_attempt',)
 
 
 class ImageInline(admin.TabularInline):
@@ -23,6 +35,16 @@ class VideoInline(admin.TabularInline):
 
 
 class PostAdmin(OSMGeoAdmin):
+    class Media:
+        js = (
+            'http://code.jquery.com/jquery-1.9.1.min.js',
+            "http://www.openlayers.org/api/OpenLayers.js",
+            'post/admin/postadmin.js',
+
+        )
+
+    form = PostAdminForm
+    add_form_template = 'post/add.html'
     list_display = [
         'caption',
         'creator',
@@ -80,11 +102,13 @@ class PostAdmin(OSMGeoAdmin):
 
     def save_model(self, request, obj, form, change):
         pages = form.cleaned_data.get('pages')
+        location = form.data.get('places')
         for page in pages:
             if request.user not in page.admins.all():
                 messages.set_level(request, messages.ERROR)
                 return messages.error(request, f"you have no access to page {page.username}")
         obj.creator = request.user
+        obj.location = location
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):

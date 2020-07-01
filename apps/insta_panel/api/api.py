@@ -865,7 +865,7 @@ class API(object):
         query_params.update(kwargs)
         response = requests.get('https://i.instagram.com/location_search/', params=query_params)
         soup = BeautifulSoup(response.text, 'html.parser')
-        loc_link = soup.head.find('link', rel="alternate", hreflang="en")["href"]
+        loc_link = soup.head.find('link', rel="alternate", hreflang="x-default")["href"]
         pattern = "\?rank_token=/?\S+"
         res = re.findall(pattern, loc_link)
         params = res[0].replace('%26', '&')
