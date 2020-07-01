@@ -16,8 +16,8 @@ Including another URLconf
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
 
-from insta_panel import settings
 
 urlpatterns = [
     path('admin8ae377/', admin.site.urls),
