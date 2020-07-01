@@ -28,11 +28,6 @@ class InstagramAccount(models.Model):
     failed_login_attempt = models.IntegerField(_("failed login attempt"), default=0)
 
 
-class Location(models.Model):
-    point = PointField(null=True)
-    local = JSONField(null=True, blank=True)
-
-
 class Post(models.Model):
     creator = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     pages = models.ManyToManyField(Page)

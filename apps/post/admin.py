@@ -8,7 +8,7 @@ from apps.page.models import Page
 from .forms import PostAdminForm
 from .utils.post import publish_post, upload_story
 from .utils.post_admin import custom_change_delete_permission, custom_view_permission
-from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo, Location, InstagramAccount
+from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo, InstagramAccount
 from ..insta_panel.api.api import API
 
 api = API()
