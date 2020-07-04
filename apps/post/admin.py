@@ -10,6 +10,7 @@ from .utils.post import publish_post, upload_story
 from .utils.post_admin import custom_change_delete_permission, custom_view_permission
 from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo, InstagramAccount
 from ..insta_panel.api.api import API
+from .tasks import publish_post_async
 
 api = API()
 
@@ -53,7 +54,7 @@ class PostAdmin(OSMGeoAdmin):
         'updated_time',
         'post_actions',
     ]
-    exclude = ["creator"]
+    exclude = ["creator", "is_crontab"]
     inlines = [
         ImageInline,
         VideoInline,
@@ -72,11 +73,17 @@ class PostAdmin(OSMGeoAdmin):
         return custom_urls + urls
 
     def post_actions(self, obj):
-        if obj.publish_time is None:
-            return format_html(
+        html = None
+        if obj.publish_time is None and obj.is_crontab is False:
+            html = format_html(
                 '<a class="button" href="{}">Publish</a>',
                 reverse('admin:post-publish', args=[obj.pk])
             )
+        elif obj.is_crontab and obj.publish_time is None:
+            html = format_html('<span>In publish queue</span>')
+        elif obj.publish_time is not None:
+            html = format_html('<span>Published</span>')
+        return html
 
     post_actions.short_description = 'Actions'
     post_actions.allow_tags = True
@@ -84,12 +91,20 @@ class PostAdmin(OSMGeoAdmin):
     def publish(self, request, post_id):
         try:
             post = Post.objects.get(id=post_id)
-            if post.publish_time is None:
-                publish_post(post_id)
-                messages.success(request, 'The post has been published on instagram page(s).')
-                Post.objects.filter(id=post_id).update(publish_time=timezone.now())
+            if post.publish_on is not None:
+                publish_time = post.publish_on - timezone.now()
+                post.is_crontab = True
+                post.save()
+                if publish_time.total_seconds() <= 0:
+                    return messages.error(request, 'publish schedule time is invalid !')
+                publish_post_async.apply_async((post_id,), countdown=publish_time.total_seconds())
             else:
-                messages.error(request, 'this post has been published already !')
+                if post.publish_time is None:
+                    publish_post(post_id)
+                    messages.success(request, 'The post has been published on instagram page(s).')
+                    Post.objects.filter(id=post_id).update(publish_time=timezone.now())
+                else:
+                    messages.error(request, 'this post has been published already !')
         except Exception as e:
             messages.error(request, e)
 

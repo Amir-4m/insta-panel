@@ -37,6 +37,8 @@ class Post(models.Model):
     created_time = models.DateTimeField(auto_now_add=True)
     updated_time = models.DateTimeField(auto_now=True)
     publish_time = models.DateTimeField(null=True, blank=True, db_index=True)
+    publish_on = models.DateTimeField(null=True, blank=True)
+    is_crontab = models.BooleanField(default=False)
 
     def __str__(self):
         return self.caption[:50]
