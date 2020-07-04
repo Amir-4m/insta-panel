@@ -19,8 +19,9 @@ def login(page):
 
 def publish_photo(post):
     photo = post.postimage_set.first().file.path
-    location = json.loads(post.location)
+    location = post.location
     if location is not None:
+        location = json.loads(location)
         location.update({"address": location.get('name')})
     upload_id = api.upload_photo(photo)
     if upload_id:
@@ -34,8 +35,9 @@ def publish_photo(post):
 
 
 def publish_video(post):
-    location = json.loads(post.location)
+    location = post.location
     if location is not None:
+        location = json.loads(location)
         location.update({"address": location.get('name')})
 
     video = post.postvideo_set.first().file.path
@@ -59,8 +61,9 @@ def publish_video(post):
 
 
 def publish_album(post):
-    location = json.loads(post.location)
+    location = post.location
     if location is not None:
+        location = json.loads(location)
         location.update({"address": location.get('name')})
     images = post.postimage_set.all()
     videos = post.postvideo_set.all()
