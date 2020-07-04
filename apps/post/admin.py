@@ -10,7 +10,7 @@ from .utils.post import publish_post, upload_story
 from .utils.post_admin import custom_change_delete_permission, custom_view_permission
 from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo, InstagramAccount
 from ..insta_panel.api.api import API
-from .tasks import publish_post_async
+from .tasks import publish_post_async, publish_story_async
 
 api = API()
 
@@ -150,9 +150,9 @@ class StoryImageInline(admin.TabularInline):
     max_num = 1
 
 
-class StoryVideoInline(admin.TabularInline):
-    model = StoryVideo
-    max_num = 1
+# class StoryVideoInline(admin.TabularInline):
+#     model = StoryVideo
+#     max_num = 1
 
 
 class StoryAdmin(admin.ModelAdmin):
@@ -164,11 +164,11 @@ class StoryAdmin(admin.ModelAdmin):
         'post_actions',
     ]
 
-    exclude = ["creator"]
+    exclude = ["creator", "is_crontab"]
 
     inlines = [
         StoryImageInline,
-        StoryVideoInline,
+        # StoryVideoInline,
     ]
 
     def page(self, obj):
@@ -184,11 +184,18 @@ class StoryAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def post_actions(self, obj):
-        if obj.publish_time is None:
-            return format_html(
+        html = None
+
+        if obj.publish_time is None and obj.is_crontab is False:
+            html = format_html(
                 '<a class="button" href="{}">Publish</a>',
                 reverse('admin:story-publish', args=[obj.pk])
             )
+        elif obj.is_crontab and obj.publish_time is None:
+            html = format_html('<span>In publish queue</span>')
+        elif obj.publish_time is not None:
+            html = format_html('<span>Published</span>')
+        return html
 
     post_actions.short_description = 'Actions'
     post_actions.allow_tags = True
@@ -196,7 +203,14 @@ class StoryAdmin(admin.ModelAdmin):
     def publish(self, request, story_id):
         try:
             story = Story.objects.get(id=story_id)
-            if not story.publish_time and upload_story(story_id):
+            if story.publish_on is not None:
+                publish_time = story.publish_on - timezone.now()
+                story.is_crontab = True
+                story.save()
+                if publish_time.total_seconds() <= 0:
+                    return messages.error(request, 'publish schedule time is invalid !')
+                publish_story_async.apply_async((story_id,), countdown=publish_time.total_seconds())
+            elif not story.publish_time and upload_story(story_id):
                 messages.success(request, 'The story has been published on instagram page(s).')
                 Story.objects.filter(id=story_id).update(publish_time=timezone.now())
             else:

@@ -48,8 +48,11 @@ class Story(models.Model):
     creator = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     pages = models.ManyToManyField(Page)
     publish_time = models.DateTimeField(null=True, blank=True, db_index=True)
+    publish_on = models.DateTimeField(null=True, blank=True)
+    is_crontab = models.BooleanField(default=False)
     created_time = models.DateTimeField(auto_now_add=True)
     updated_time = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         verbose_name_plural = "Stories"
