@@ -8,5 +8,5 @@ class PageForm(ModelForm):
         model = Page
         fields = '__all__'
         widgets = {
-            'password': PasswordInput(),
+            'password': PasswordInput(render_value=True),
         }

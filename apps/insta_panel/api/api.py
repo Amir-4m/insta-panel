@@ -6,16 +6,17 @@ import json
 import logging
 import os
 import random
+import re
 import sys
 import time
 import uuid
-
 import pytz
 import requests
 import requests.utils
 import six.moves.urllib as urllib
 from requests_toolbelt import MultipartEncoder
 from tqdm import tqdm
+from bs4 import BeautifulSoup
 
 from . import config, devices
 from .api_login import (
@@ -37,7 +38,7 @@ from .api_login import (
     creatives_ar_class,
 )
 from .api_photo import configure_photo, download_photo, upload_photo
-from .api_story import configure_story, download_story, upload_story_photo
+from .api_story import configure_story, download_story, upload_story_photo, upload_story_video, configure_story_video
 from .api_video import configure_video, download_video, upload_video
 from .api_album import configure_album, upload_album
 from .prepare import delete_credentials, get_credentials
@@ -57,6 +58,12 @@ current_path = os.path.abspath(os.getcwd())
 
 
 class API(object):
+    EXTERNAL_LOC_SOURCES = {
+        'foursquare': 'foursquare_v2_id',
+        'facebook_places': 'facebook_places_id',
+        'facebook_events': 'facebook_events_id'
+    }
+
     def __init__(
             self,
             device=None,
@@ -197,6 +204,44 @@ class API(object):
 
     def save_uuid_and_cookie(self):
         return save_uuid_and_cookie(self)
+
+    def _validate_location(self, location):
+        """
+        Validates and patches a location dict for use with the upload functions
+
+        :param location: dict containing location info
+        :return:
+        """
+        location_keys = ['external_source', 'name', 'address']
+        if not isinstance(location, dict):
+            raise ValueError('Location must be a dict.')
+
+        # patch location object returned from location_search
+        if 'external_source' not in location and 'external_id_source' in location and 'external_id' in location:
+            external_source = location['external_id_source']
+            location['external_source'] = external_source
+            if external_source in self.EXTERNAL_LOC_SOURCES:
+                location[self.EXTERNAL_LOC_SOURCES[external_source]] = location['external_id']
+        for k in location_keys:
+            if not location.get(k):
+                raise ValueError('Location dict must contain "{0!s}".'.format(k))
+        for k, val in self.EXTERNAL_LOC_SOURCES.items():
+            if location['external_source'] == k and not location.get(val):
+                raise ValueError('Location dict must contain "{0!s}".'.format(val))
+
+        media_loc = {
+            'name': location['name'],
+            'address': location['lat'],
+            'external_source': location['external_source'],
+        }
+        if 'lat' in location and 'lng' in location:
+            media_loc['lat'] = location['lat']
+            media_loc['lng'] = location['lng']
+        for k, val in self.EXTERNAL_LOC_SOURCES.items():
+            if location['external_source'] == k:
+                media_loc['external_source'] = k
+                media_loc[val] = location[val]
+        return media_loc
 
     def login(
             self,
@@ -473,7 +518,10 @@ class API(object):
             headers=None,
             extra_sig=None,
             timeout_minutes=None,
+            params=None,
+            is_custom=False
     ):
+        params = params if params is not None else {}
         self.set_proxy()  # Only happens if `self.proxy`
         self.session.headers.update(config.REQUEST_HEADERS)
         self.session.headers.update({"User-Agent": self.user_agent})
@@ -496,7 +544,18 @@ class API(object):
                 response = self.session.post(config.API_URL + endpoint, data=post)
             else:  # GET
                 # time.sleep(random.randint(1, 2))
-                response = self.session.get(config.API_URL + endpoint)
+                if is_custom:
+                    with open(self.cookie_fname) as json_file:
+                        data = json.load(json_file)
+                        session_id = data.get("cookie")['sessionid']
+                    response = requests.get(
+                        endpoint,
+                        params=params,
+                        cookies={'csrftoken': self.token, 'sessionid': session_id}
+                    )
+                    return response
+                else:
+                    response = self.session.get(config.API_URL + endpoint, params=params)
         except Exception as e:
             self.logger.warning(str(e))
             return False
@@ -786,6 +845,33 @@ class API(object):
     def get_megaphone_log(self):
         return self.send_request("megaphone/log/")
 
+    def location_search(self, latitude, longitude, query=None, **kwargs):
+        """
+        Location search
+
+        :param latitude:
+        :param longitude:
+        :param query:
+        :return:
+        """
+        query_params = {
+            'rank_token': self.rank_token,
+            'latitude': latitude,
+            'longitude': longitude,
+            'timestamp': int(time.time())
+        }
+        if query:
+            query_params['search_query'] = query
+        query_params.update(kwargs)
+        response = requests.get('https://i.instagram.com/location_search/', params=query_params)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        loc_link = soup.head.find('link', rel="alternate", hreflang="x-default")["href"]
+        pattern = "\?rank_token=/?\S+"
+        res = re.findall(pattern, loc_link)
+        params = res[0].replace('%26', '&')
+        return self.send_request("https://i.instagram.com/location_search/{}".format(params),
+                                 is_custom=True)
+
     def expose(self):
         data = self.json_data(
             {"id": self.uuid, "experiment": "ig_android_profile_contextual_feed"}
@@ -825,8 +911,8 @@ class API(object):
     def download_photo(self, media_id, filename, media=False, folder="photos"):
         return download_photo(self, media_id, filename, media, folder)
 
-    def configure_photo(self, upload_id, photo, caption=""):
-        return configure_photo(self, upload_id, photo, caption)
+    def configure_photo(self, upload_id, photo, caption="", location=None):
+        return configure_photo(self, upload_id, photo, caption, location)
 
     # ====== STORY METHODS ====== #
     def download_story(self, filename, story_url, username):
@@ -834,6 +920,12 @@ class API(object):
 
     def upload_story_photo(self, photo, upload_id=None):
         return upload_story_photo(self, photo, upload_id)
+
+    def upload_story_video(self, video, upload_id=None):
+        return upload_story_video(self, video, upload_id)
+
+    def configure_story_video(self, upload_id, video):
+        return configure_story_video(self, upload_id, video)
 
     def configure_story(self, upload_id, photo):
         return configure_story(self, upload_id, photo)
@@ -870,6 +962,7 @@ class API(object):
             height,
             duration,
             caption="",
+            location=None
     ):
         """Post Configure Video
         (send caption, thumbnail andmore else to Instagram)
@@ -889,12 +982,12 @@ class API(object):
                           This is the simplest request object.
         """
         return configure_video(
-            self, upload_id, width, height, duration, caption
+            self, upload_id, width, height, duration, caption, location
         )
 
     # ====== VIDEO METHODS ====== #
-    def upload_album(self, media, caption=None):
-        return upload_album(self, media, caption)
+    def upload_album(self, media, caption=None, location=None):
+        return upload_album(self, media, caption, location=location)
 
     def configure_album(self, media, albumInternalMetadata, captionText='', location=None):
         return configure_album(self, media, albumInternalMetadata, captionText, location)

@@ -7,6 +7,7 @@ import struct
 import json
 import time
 import random
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from django.core.exceptions import ValidationError
@@ -79,24 +80,35 @@ def compatible_aspect_ratio(size):
     return min_ratio <= ratio <= max_ratio
 
 
-def configure_photo(self, upload_id, photo, caption=""):
+def configure_photo(self, upload_id, photo, caption="", location=None):
     width, height = get_image_size(photo)
-    data = self.json_data(
-        {
-            "media_folder": "Instagram",
-            "source_type": 4,
-            "caption": caption,
-            "upload_id": upload_id,
-            "device": self.device_settings,
-            "edits": {
-                "crop_original_size": [width * 1.0, height * 1.0],
-                "crop_center": [0.0, 0.0],
-                "crop_zoom": 1.0,
-            },
-            "extra": {"source_width": width, "source_height": height},
-        }
-    )
-    return self.send_request("media/configure/?", data)
+    data = {
+        "media_folder": "Instagram",
+        "source_type": 4,
+        "caption": caption,
+        "upload_id": upload_id,
+        "device": self.device_settings,
+        "edits": {
+            "crop_original_size": [width * 1.0, height * 1.0],
+            "crop_center": [0.0, 0.0],
+            "crop_zoom": 1.0,
+        },
+        "extra": {"source_width": width, "source_height": height},
+    }
+
+    if location is not None:
+        media_loc = self._validate_location(location)
+        data['location'] = json.dumps(media_loc)
+        if 'lat' in location and 'lng' in location:
+            data['geotag_enabled'] = '1'
+            data['exif_latitude'] = '0.0'
+            data['exif_longitude'] = '0.0'
+            data['posting_latitude'] = str(location['lat'])
+            data['posting_longitude'] = str(location['lng'])
+            data['media_latitude'] = str(location['lat'])
+            data['media_latitude'] = str(location['lng'])
+    data = self.json_data(data)
+    return self.send_request("media/configure/", data)
 
 
 def upload_photo(
@@ -125,6 +137,7 @@ def upload_photo(
     @return Boolean
     """
     options = dict({"configure_timeout": 15, "rename": True}, **(options or {}))
+    for_video = True if upload_id else False
 
     if upload_id is None:
         upload_id = str(int(time.time() * 1000))
@@ -143,17 +156,21 @@ def upload_photo(
     upload_name = "{upload_id}_0_{rand}".format(
         upload_id=upload_id, rand=random.randint(1000000000, 9999999999)
     )
+
     rupload_params = {
-        "retry_context": '{"num_step_auto_retry":0,"num_reupload":0,"num_step_manual_retry":0}',
-        "media_type": "1",
-        "xsharing_user_ids": "[]",
-        "upload_id": upload_id,
-        "image_compression": json.dumps(
-            {"lib_name": "moz", "lib_version": "3.1.m", "quality": "80"}
-        ),
+        'retry_context': {
+            'num_step_auto_retry': 0, 'num_reupload': 0, 'num_step_manual_retry': 0
+        },
+        'media_type': 1,
+        'upload_id': upload_id,
+        'xsharing_user_ids': [],
+        ' image_compression': {'lib_name': 'moz', 'lib_version': '3.1.m', 'quality': '80'},
+
     }
     if is_sidecar:
         rupload_params["is_sidecar"] = '1'
+        if for_video:
+            rupload_params['media_type'] = 2
 
     try:
         photo_data = open(photo, "rb").read()
@@ -164,9 +181,10 @@ def upload_photo(
         {
             "X-Instagram-Rupload-Params": json.dumps(rupload_params),
             "X_FB_PHOTO_WATERFALL_ID": waterfall_id,
+            "Cookie2": "$Version=1",
             "X-Entity-Type": "image/jpeg",
             "Offset": "0",
-            "X-Entity-Name": upload_name,
+            "X-Entity-Name": "fb_uploader_" + upload_id,
             "X-Entity-Length": photo_len,
             "Content-Type": "application/octet-stream",
             "Content-Length": photo_len,
@@ -188,7 +206,7 @@ def upload_photo(
             "Photo Upload failed with the following response: {}".format(response)
         )
         return False
-    return True
+    return upload_id
 
 
 def get_image_size(fname):

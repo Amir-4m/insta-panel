@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'django.contrib.gis',
     'apps.page',
     'apps.post',
 ]
@@ -51,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'insta_panel.urls'
+ROOT_URLCONF = 'conf.urls'
 
 TEMPLATES = [
     {
@@ -69,29 +69,35 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'insta_panel.wsgi.application'
+WSGI_APPLICATION = 'conf.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config("DB_NAME"),
-        'USER': config("DB_USER", default=''),
-        'PASSWORD': config("DB_PASS", default=''),
-        'HOST': config("DB_HOST", default='localhost'),
-        'PORT': config("DB_PORT", default=''),
-    }
+        'ENGINE': config('DB_ENGINE'),
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASS'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
+    },
 }
-
 # Cache
 CACHES = {
     'default': {
-        'BACKEND': config("CACHE_BACKEND", default='django.core.cache.backends.locmem.LocMemCache'),
-        'LOCATION': config("CACHE_HOST", ''),
-        'KEY_PREFIX': 'INSTACP',
+        'BACKEND': config('CACHE_BACKEND', default='django.core.cache.backends.locmem.LocMemCache'),
+        'LOCATION': config('CACHE_HOST', default=''),
+        'KEY_PREFIX': 'INSTA_PANEL',
     },
 }
+
+CELERY_BROKER_URL = 'amqp://%(USER)s:%(PASS)s@%(HOST)s' % {
+    'USER': config('CELERY_USER'),
+    'PASS': config('CELERY_PASS'),
+    'HOST': config('CELERY_HOST'),
+}
+CELERY_TIMEZONE = 'Asia/Tehran'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -112,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
-LANGUAGE_CODE = 'fa-ir'
+LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Tehran'
 USE_I18N = False
 USE_L10N = False

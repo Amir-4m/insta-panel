@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 
-def upload_album(self, media, caption=None, upload_id=None, options={}):
+def upload_album(self, media, caption=None, upload_id=None, location=None, options={}):
     if not media:
         raise Exception("List of media to upload can't be empty.")
 
@@ -59,7 +59,7 @@ def upload_album(self, media, caption=None, upload_id=None, options={}):
     for attempt in range(4):
         if configure_timeout:
             time.sleep(configure_timeout)
-        if self.configure_album(media, album_internal_metadata, captionText=caption):
+        if self.configure_album(media, album_internal_metadata, captionText=caption, location=location):
             media = self.last_json.get("media")
             self.expose()
             return media
@@ -120,13 +120,26 @@ def configure_album(self, media, albumInternalMetadata, captionText='', location
 
             childrenMetadata.append(videoConfig)
     # Build the request...
-    data = self.json_data(
-        {'_csrftoken': self.token,
-         '_uid': self.user_id,
-         '_uuid': self.uuid,
-         'client_sidecar_id': albumUploadId,
-         'caption': captionText,
-         'children_metadata': childrenMetadata}
-    )
+    data = {
+        '_csrftoken': self.token,
+        '_uid': self.user_id,
+        '_uuid': self.uuid,
+        'client_sidecar_id': albumUploadId,
+        'caption': captionText,
+        'children_metadata': childrenMetadata
+    }
+
+    if location is not None:
+        media_loc = self._validate_location(location)
+        data['location'] = json.dumps(media_loc)
+        if 'lat' in location and 'lng' in location:
+            data['geotag_enabled'] = '1'
+            data['exif_latitude'] = '0.0'
+            data['exif_longitude'] = '0.0'
+            data['posting_latitude'] = str(location['lat'])
+            data['posting_longitude'] = str(location['lng'])
+            data['media_latitude'] = str(location['lat'])
+            data['media_latitude'] = str(location['lng'])
+    data = self.json_data(data)
 
     return self.send_request("media/configure_sidecar/?", data)

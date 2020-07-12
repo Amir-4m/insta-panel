@@ -1,12 +1,14 @@
-requests
-python-memcached
-
-Django>=3.0
-
+Django>=2.2, <2.3
+beautifulsoup4==4.9.1
+instagram-private-api==1.6.0.0
+instagram-private-api-extensions==0.3.8
+moviepy==0.2.3.2
+Pillow==7.1.2
+psycopg2-binary==2.8.5
 python-decouple==3.3
-
-psycopg2-binary
-Pillow
-
-requests_toolbelt
-tqdm
+python-memcached==1.59
+requests==2.23.0
+requests-toolbelt==0.9.1
+uuid==1.30
+pycrypto==2.6.1
+celery
