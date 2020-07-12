@@ -4,8 +4,8 @@ stages:
   - deploy
 
 variables:
-  PROJECT_DIR: "insta_follow"
-  PROJECT_ABR: "instaflw"
+  PROJECT_DIR: "insta_panel"
+  PROJECT_ABR: "instacp"
 
 build:
   stage: build
