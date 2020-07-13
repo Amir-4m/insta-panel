@@ -81,8 +81,9 @@ staging:
     - pip install -r requirements.txt
     - python manage.py makemigrations
     - python manage.py migrate
+    - python manage.py collectstatic
     - uwsgi --reload /tmp/$PROJECT_DIR-master.pid
-    - supervisorctl restart $PROJECT_ABR:*
+    - supervisorctl restart $PROJECT_ABR-worker
   only:
     - develop
 #    - /^staging-.*$/
@@ -102,8 +103,9 @@ production:
     - git pull
     - pip install -r requirements.txt
     - python manage.py migrate
+    - python manage.py collectstatic
     - uwsgi --reload /tmp/$PROJECT_DIR-master.pid
-    - supervisorctl restart $PROJECT_ABR:*
+    - supervisorctl restart $PROJECT_ABR-worker
   only:
     - /^release-.*$/
   except:
