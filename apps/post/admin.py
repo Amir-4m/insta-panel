@@ -38,8 +38,8 @@ class VideoInline(admin.TabularInline):
 class PostAdmin(OSMGeoAdmin):
     class Media:
         js = (
-            'http://code.jquery.com/jquery-1.9.1.min.js',
-            "http://www.openlayers.org/api/OpenLayers.js",
+            'https://code.jquery.com/jquery-1.9.1.min.js',
+            "https://www.openlayers.org/api/OpenLayers.js",
             'post/admin/postadmin.js',
 
         )
