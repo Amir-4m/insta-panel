@@ -32,7 +32,7 @@ class ImageInline(admin.TabularInline):
 class VideoInline(admin.TabularInline):
     model = PostVideo
     extra = 1
-    max_num = 10
+    max_num = 1
 
 
 class PostAdmin(OSMGeoAdmin):
@@ -54,6 +54,8 @@ class PostAdmin(OSMGeoAdmin):
         'updated_time',
         'post_actions',
     ]
+    readonly_fields = ('publish_time',)
+
     exclude = ["creator", "is_crontab"]
     inlines = [
         ImageInline,
@@ -163,6 +165,7 @@ class StoryAdmin(admin.ModelAdmin):
         'updated_time',
         'post_actions',
     ]
+    readonly_fields = ('publish_time',)
 
     exclude = ["creator", "is_crontab"]
 
