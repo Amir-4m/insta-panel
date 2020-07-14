@@ -98,10 +98,10 @@ class PostAdmin(OSMGeoAdmin):
             post = Post.objects.get(id=post_id)
             if post.publish_on is not None:
                 publish_time = post.publish_on - timezone.now()
+                if publish_time.total_seconds() <= 0:
+                    raise messages.error(request, 'publish schedule time is invalid !')
                 post.is_crontab = True
                 post.save()
-                if publish_time.total_seconds() <= 0:
-                    return messages.error(request, 'publish schedule time is invalid !')
                 publish_post_async.apply_async((post_id,), countdown=publish_time.total_seconds())
             else:
                 if post.publish_time is None:
@@ -126,7 +126,7 @@ class PostAdmin(OSMGeoAdmin):
         for page in pages:
             if request.user not in page.admins.all():
                 messages.set_level(request, messages.ERROR)
-                return messages.error(request, f"you have no access to page {page.username}")
+                raise messages.error(request, f"you have no access to page {page.username}")
         obj.creator = request.user
         obj.location = location
         super().save_model(request, obj, form, change)
@@ -214,10 +214,10 @@ class StoryAdmin(admin.ModelAdmin):
             story = Story.objects.get(id=story_id)
             if story.publish_on is not None:
                 publish_time = story.publish_on - timezone.now()
+                if publish_time.total_seconds() <= 0:
+                    raise messages.error(request, 'publish schedule time is invalid !')
                 story.is_crontab = True
                 story.save()
-                if publish_time.total_seconds() <= 0:
-                    return messages.error(request, 'publish schedule time is invalid !')
                 publish_story_async.apply_async((story_id,), countdown=publish_time.total_seconds())
             elif not story.publish_time and upload_story(story_id):
                 messages.success(request, 'The story has been published on instagram page(s).')
@@ -238,7 +238,7 @@ class StoryAdmin(admin.ModelAdmin):
         for page in pages:
             if request.user not in page.admins.all():
                 messages.set_level(request, messages.ERROR)
-                return messages.error(request, f"you have no access to page {page.username}")
+                raise messages.error(request, f"you have no access to page {page.username}")
         obj.creator = request.user
         super().save_model(request, obj, form, change)
 
