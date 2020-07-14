@@ -53,7 +53,9 @@ class PostAdmin(OSMGeoAdmin):
         'page',
         'created_time',
         'updated_time',
+        'publish_on',
         'post_actions',
+
     ]
     readonly_fields = ('publish_time',)
 
@@ -164,7 +166,9 @@ class StoryAdmin(admin.ModelAdmin):
         'page',
         'created_time',
         'updated_time',
+        'publish_on',
         'post_actions',
+
     ]
     readonly_fields = ('publish_time',)
 
