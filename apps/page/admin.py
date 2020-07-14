@@ -7,6 +7,7 @@ from .services import PageServices
 
 class PageAdmin(admin.ModelAdmin):
     form = PageForm
+    filter_horizontal = ('admins',)
 
     def save_model(self, request, obj, form, change):
         if 'password' in form.changed_data:

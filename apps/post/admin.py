@@ -46,6 +46,7 @@ class PostAdmin(OSMGeoAdmin):
 
     form = PostAdminForm
     add_form_template = 'post/add.html'
+    filter_horizontal = ('pages',)
     list_display = [
         'caption',
         'creator',
@@ -168,6 +169,7 @@ class StoryAdmin(admin.ModelAdmin):
     readonly_fields = ('publish_time',)
 
     exclude = ["creator", "is_crontab"]
+    filter_horizontal = ('pages',)
 
     inlines = [
         StoryImageInline,
