@@ -1,3 +1,4 @@
+import logging
 from django.contrib import admin, messages
 from django.contrib.gis.admin import OSMGeoAdmin
 from django.utils import timezone
@@ -11,6 +12,8 @@ from .utils.post_admin import custom_change_delete_permission, custom_view_permi
 from .models import Post, PostImage, PostVideo, Story, StoryImage, StoryVideo, InstagramAccount
 from ..insta_panel.api.api import API
 from .tasks import publish_post_async, publish_story_async
+
+logger = logging.getLogger(__name__)
 
 api = API()
 
@@ -111,6 +114,7 @@ class PostAdmin(OSMGeoAdmin):
                 else:
                     messages.error(request, 'this post has been published already !')
         except Exception as e:
+            logger.error(f"publish post error {e}")
             messages.error(request, e)
 
         return redirect(f"admin:post_post_changelist")
@@ -225,6 +229,7 @@ class StoryAdmin(admin.ModelAdmin):
             else:
                 messages.error(request, 'error occurred !')
         except Exception as e:
+            logger.error(f"publish story error {e}")
             messages.error(request, e)
         return redirect(f"admin:post_story_changelist")
 
