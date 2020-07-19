@@ -13,4 +13,3 @@ uuid==1.30
 pycrypto==2.6.1
 celery
 sentry-sdk==0.14.2
-imageio
