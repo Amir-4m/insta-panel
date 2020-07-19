@@ -75,8 +75,8 @@ def download_photo(self, media_id, filename, media=False, folder="photos"):
 def compatible_aspect_ratio(size):
     min_ratio, max_ratio = 4.0 / 5.0, 90.0 / 47.0
     width, height = size
-    if width > 1080 or width < 800:
-        raise ValueError('width should be between 1080 and 800')
+    if width > 1080 or width < 480:
+        raise ValueError('width should be between 1080 and 480')
 
     ratio = width * 1.0 / height * 1.0
     print("FOUND: w:{w} h:{h} r:{r}".format(w=width, h=height, r=ratio))
