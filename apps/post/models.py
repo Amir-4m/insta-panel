@@ -31,7 +31,7 @@ class InstagramAccount(models.Model):
 class Post(models.Model):
     creator = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     pages = models.ManyToManyField(Page)
-    caption = models.TextField(blank=True)
+    caption = models.TextField(blank=True, max_length=2048)
     point = PointField(null=True, blank=True)
     location = JSONField(editable=False, null=True)
     created_time = models.DateTimeField(auto_now_add=True)
