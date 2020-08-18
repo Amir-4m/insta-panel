@@ -1,4 +1,6 @@
 from django.conf.global_settings import AUTH_USER_MODEL
+from django.core.exceptions import ValidationError
+from django.core.files.images import get_image_dimensions
 from django.contrib.gis.db.models import PointField
 from django.contrib.postgres.fields import JSONField
 from django.utils.translation import ugettext_lazy as _
@@ -63,6 +65,11 @@ class PostImage(models.Model):
 
     def __str__(self):
         return self.file.name
+
+    def clean(self):
+        w, h = get_image_dimensions(self.file)
+        if w > 1080 or w < 480:
+            raise ValidationError(_("width should be between 1080 and 480"))
 
 
 class PostVideo(models.Model):
