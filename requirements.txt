@@ -12,4 +12,5 @@ requests-toolbelt==0.9.1
 uuid==1.30
 pycrypto==2.6.1
 celery
-sentry-sdk==0.14.2
+sentry-sdk==0.19.1
+
